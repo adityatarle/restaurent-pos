@@ -230,7 +230,7 @@
                 </li>
             `).join('');
 
-        totalDisplay.textContent = `Total: $${order.total_amount}`;
+        totalDisplay.textContent = `Total: $${order.final_total ?? order.total_amount}`;
 
         const unprintedCount = order.order_items.filter(item => !item.printed_to_kitchen && item.status !== 'cancelled').length;
         printButton.disabled = unprintedCount === 0;

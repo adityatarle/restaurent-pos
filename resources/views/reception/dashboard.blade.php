@@ -118,10 +118,18 @@
             .then(tables => renderTables(tables));
     });
 
-    socket.on('order_updated', () => {
-        fetch('/reception/orders')
-            .then(res => res.json())
-            .then(orders => renderOrders(orders));
+    socket.on('order_updated', (payload) => {
+        // If we receive full order payload, update orders list for that order only; else refetch
+        if (payload && payload.order) {
+            // naive refetch for simplicity to keep code small
+            fetch('/reception/orders')
+                .then(res => res.json())
+                .then(orders => renderOrders(orders));
+        } else {
+            fetch('/reception/orders')
+                .then(res => res.json())
+                .then(orders => renderOrders(orders));
+        }
     });
 
     socket.on('notification', (payload) => {
