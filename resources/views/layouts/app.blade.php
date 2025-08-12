@@ -5,42 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel Restaurant') }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh; /* Ensures body takes at least full viewport height */
+        :root {
+            --sidebar-bg: #0d1b2a;
+            --sidebar-link: #b8c3cf;
+            --sidebar-link-active: #ffffff;
+            --sidebar-border: #1b263b;
         }
-        #app {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1; /* Allows #app to grow and fill body height */
-        }
-        .main-wrapper {
-            display: flex;
-            flex-grow: 1; /* Allows this wrapper to fill remaining space in #app */
-            overflow: hidden; /* Important: Prevents layout issues with children's overflow */
-        }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        #app { display: flex; flex-direction: column; flex-grow: 1; }
+        .main-wrapper { display: flex; flex-grow: 1; overflow: hidden; }
         #sidebar {
-            flex-shrink: 0; /* Prevents sidebar from shrinking if content is wide */
-            width: 260px;   /* Sidebar width */
-            overflow-y: auto; /* Allows sidebar content to scroll if it's too long */
-            transition: width .2s ease-in-out;
+            flex-shrink: 0; width: 260px; overflow-y: auto; transition: width .2s ease-in-out;
+            background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border);
         }
+        #sidebar .nav-link { color: var(--sidebar-link); }
+        #sidebar .nav-link.active, #sidebar .nav-link:hover { color: var(--sidebar-link-active); background-color: rgba(255,255,255,.06); }
+        #sidebar .text-muted { color: #7e8a98 !important; }
         #sidebar.collapsed { width: 64px; }
-        #sidebar .nav-link { display: flex; align-items: center; gap: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #sidebar .nav-link { display: flex; align-items: center; gap: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: .4rem; }
         #sidebar.collapsed .nav-link { justify-content: center; }
         #sidebar.collapsed .nav-link .label { display: none; }
-        .content-wrapper { flex-grow: 1; overflow-y: auto; }
+        .content-wrapper { flex-grow: 1; overflow-y: auto; background: #f6f9fc; }
 
-        /* Helper for sticky elements within the .content-wrapper */
         .sticky-in-content { position: sticky; top: 1rem; z-index: 1020; }
-
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
     </style>
     @stack('styles')

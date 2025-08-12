@@ -1,6 +1,6 @@
 @foreach($tables as $table)
 <div class="col-md-3 mb-4">
-    <div class="card h-100 table-card status-{{ $table->status }} @if($table->currentOrder && $table->currentOrder->user_id == Auth::id()) my-table @endif">
+    <div class="card h-100 shadow-sm border-0 table-card status-{{ $table->status }} @if($table->currentOrder && $table->currentOrder->user_id == Auth::id()) my-table @endif">
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong>{{ $table->name }}</strong>
             <span class="badge bg-{{ $table->status === 'occupied' ? 'warning text-dark' : 'success' }} text-capitalize">{{ $table->status }}</span>
