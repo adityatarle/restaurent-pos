@@ -14,7 +14,11 @@
                     <div>Waiter: {{ $table->currentOrder->waiter->name }}</div>
                 </div>
                 @if($table->currentOrder->user_id == Auth::id() || Auth::user()->isSuperAdmin())
-                    <a href="{{ route('waiter.orders.show', $table->currentOrder->id) }}" class="btn btn-sm btn-primary w-100">View / Edit</a>
+                    <a href="{{ route('waiter.orders.show', $table->currentOrder->id) }}" class="btn btn-sm btn-primary w-100 mb-2">View / Edit</a>
+                    <form action="{{ route('waiter.tables.request_bill', $table->id) }}" method="POST">
+                        @csrf
+                        <button class="btn btn-sm btn-outline-success w-100" type="submit"><i class="bi bi-receipt"></i> Request Bill</button>
+                    </form>
                 @else
                     <button class="btn btn-sm btn-secondary w-100" disabled>Occupied by {{ $table->currentOrder->waiter->name }}</button>
                 @endif

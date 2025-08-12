@@ -41,10 +41,35 @@
                                 <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
                                 <td class="text-end">${{ number_format($order->orderItems->where('status', '!=', 'cancelled')->sum(fn($i) => $i->price_at_order * $i->quantity), 2) }}</td>
                             </tr>
-                            {{-- Add Tax, Service Charge if applicable --}}
                             <tr>
-                                <td colspan="3" class="text-end"><strong>TOTAL:</strong></td>
-                                <td class="text-end"><strong>${{ number_format($order->total_amount, 2) }}</strong></td>
+                                <td colspan="4">
+                                    <form class="row g-2 align-items-end" method="post" action="{{ route('reception.bill.update', $order->id) }}">
+                                        @csrf
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label">Discount</label>
+                                            <input type="number" step="0.01" min="0" name="discount_amount" value="{{ $order->discount_amount }}" class="form-control">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label">Tax</label>
+                                            <input type="number" step="0.01" min="0" name="tax_amount" value="{{ $order->tax_amount }}" class="form-control">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label">Service Charge</label>
+                                            <input type="number" step="0.01" min="0" name="service_charge_amount" value="{{ $order->service_charge_amount }}" class="form-control">
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label">Tip</label>
+                                            <input type="number" step="0.01" min="0" name="tip_amount" value="{{ $order->tip_amount }}" class="form-control">
+                                        </div>
+                                        <div class="col-12">
+                                            <button class="btn btn-outline-primary">Update Totals</button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Final Total:</strong></td>
+                                <td class="text-end"><strong>${{ number_format($order->final_total ?? $order->total_amount, 2) }}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
