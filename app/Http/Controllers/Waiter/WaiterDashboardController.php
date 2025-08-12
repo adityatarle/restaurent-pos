@@ -16,6 +16,12 @@ class WaiterDashboardController extends Controller
         return view('waiter.dashboard', compact('tables'));
     }
 
+    public function tablesPartial()
+    {
+        $tables = RestaurantTable::with('currentOrder.waiter')->orderBy('name')->get();
+        return view('waiter.partials.table_grid', compact('tables'));
+    }
+
     public function assignTable(Request $request, RestaurantTable $table)
     {
         $request->validate(['customer_count' => 'required|integer|min:1']);

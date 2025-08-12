@@ -51,6 +51,7 @@ Route::middleware(['auth', 'reception'])->prefix('reception')->name('reception.'
 // Waiter Routes
 Route::middleware(['auth', 'waiter'])->prefix('waiter')->name('waiter.')->group(function () {
     Route::get('dashboard', [WaiterDashboardController::class, 'index'])->name('dashboard'); // Table view
+    Route::get('tables/partial', [WaiterDashboardController::class, 'tablesPartial'])->name('tables.partial');
 
     // Table Assignment
     Route::post('tables/{table}/assign', [WaiterDashboardController::class, 'assignTable'])->name('tables.assign');
