@@ -70,8 +70,13 @@ class OrderController extends Controller
         $categories = Category::with(['menuItems' => function ($query) {
             $query->where('is_available', true)->orderBy('name');
         }])->orderBy('name')->get();
+        $tables = RestaurantTable::orderBy('name')->get();
+        $openOrders = Order::whereNotIn('status', ['paid', 'cancelled'])
+            ->where('id', '!=', $order->id)
+            ->orderByDesc('id')
+            ->get();
 
-        return view('waiter.orders.show', compact('order', 'categories'));
+        return view('waiter.orders.show', compact('order', 'categories', 'tables', 'openOrders'));
     }
 
     public function create(RestaurantTable $table)
@@ -126,28 +131,38 @@ class OrderController extends Controller
             'menu_item_id' => 'required|exists:menu_items,id',
             'quantity' => 'required|integer|min:1',
             'item_notes' => 'nullable|string|max:255',
+            'course' => 'nullable|integer|min:1|max:10',
         ]);
 
         if ($order->status === 'paid' || $order->status === 'cancelled') {
             return back()->with('error', 'Cannot add items to a completed or cancelled order.');
         }
 
-        $menuItem = MenuItem::findOrFail($request->menu_item_id);
+        $menuItem = MenuItem::with('ingredients')->findOrFail($request->menu_item_id);
+
+        // Low-stock check based on ingredients
+        foreach ($menuItem->ingredients as $ingredient) {
+            $required = ($ingredient->pivot->quantity ?? 0) * $request->quantity;
+            if (($ingredient->current_stock ?? 0) < $required) {
+                // Optionally block or warn; here we warn and allow
+                session()->flash('info', "Low stock: {$ingredient->name}. Required {$required} {$ingredient->unit_of_measure}, available {$ingredient->current_stock}.");
+            }
+        }
 
         // Check if item already exists in order (and is not cancelled) to update quantity
         $existingItem = $order->orderItems()
             ->where('menu_item_id', $menuItem->id)
-            ->where('status', '!=', 'cancelled') // Consider items not yet cancelled
-            // Optional: Add more conditions if you want to group by notes, etc.
+            ->where('status', '!=', 'cancelled')
             ->first();
 
         if ($existingItem) {
             $existingItem->quantity += $request->quantity;
-            if ($request->filled('item_notes')) { // Overwrite or append notes based on logic
+            if ($request->filled('item_notes')) {
                 $existingItem->item_notes = $existingItem->item_notes ? $existingItem->item_notes . '; ' . $request->item_notes : $request->item_notes;
             }
-            $existingItem->status = 'pending'; // Reset status if it was modified before
-            $existingItem->printed_to_kitchen = false; // Needs to be re-printed or part of new print
+            if ($request->filled('course')) { $existingItem->course = $request->course; }
+            $existingItem->status = 'pending';
+            $existingItem->printed_to_kitchen = false;
             $existingItem->save();
         } else {
             OrderItem::create([
@@ -156,20 +171,21 @@ class OrderController extends Controller
                 'quantity' => $request->quantity,
                 'price_at_order' => $menuItem->price,
                 'item_notes' => $request->item_notes,
-                'status' => 'pending', // Default status
+                'course' => $request->course,
+                'status' => 'pending',
                 'printed_to_kitchen' => false,
             ]);
         }
 
         $order->calculateTotal();
-        event(new OrderUpdated($order)); // Trigger event
+        event(new OrderUpdated($order));
         return back()->with('success', 'Item added to order.');
     }
 
     public function updateItem(Request $request, Order $order, OrderItem $orderItem)
     {
         $request->validate([
-            'quantity' => 'required|integer|min:1', // Or min:0 if allowing cancellation via quantity 0
+            'quantity' => 'required|integer|min:1',
         ]);
 
         if ($order->id !== $orderItem->order_id) {
@@ -179,19 +195,15 @@ class OrderController extends Controller
             return back()->with('error', 'Cannot modify items in a completed or cancelled order.');
         }
 
-        $originalQuantity = $orderItem->quantity;
         $orderItem->quantity = $request->quantity;
-        $orderItem->status = 'pending'; // Mark as pending to be re-printed/notified
+        $orderItem->status = 'pending';
         $orderItem->printed_to_kitchen = false;
         $orderItem->save();
 
         $order->calculateTotal();
-        event(new OrderUpdated($order)); // Trigger event
+        event(new OrderUpdated($order));
         return back()->with('success', 'Item quantity updated.');
     }
-
-
-
 
     public function removeItem(Order $order, OrderItem $orderItem) // This is logical cancel
     {
@@ -202,14 +214,12 @@ class OrderController extends Controller
             return back()->with('error', 'Cannot remove items from a completed or cancelled order.');
         }
 
-        $orderItem->status = 'cancelled'; // Mark as cancelled
-        // $orderItem->quantity = 0; // Optional: zero out quantity
+        $orderItem->status = 'cancelled';
         $orderItem->save();
 
         $order->calculateTotal();
-        event(new OrderUpdated($order)); // Trigger event
+        event(new OrderUpdated($order));
 
-        // If item was already sent to kitchen, a cancellation print/notification is needed
         if ($orderItem->printed_to_kitchen) {
             KitchenPrint::create([
                 'order_id' => $order->id,
@@ -217,18 +227,16 @@ class OrderController extends Controller
                 'print_content' => [
                     'item_id' => $orderItem->id,
                     'menu_item_name' => $orderItem->menuItem->name,
-                    'original_quantity' => $orderItem->quantity, // The quantity that was cancelled
+                    'original_quantity' => $orderItem->quantity,
                 ],
                 'user_id' => Auth::id(),
             ]);
 
-            // Send cancellation to printer stub
             app(\App\Services\PrinterService::class)->printKitchenCancellation($order, [[
                 'name' => $orderItem->menuItem->name,
                 'quantity' => $orderItem->quantity,
             ]]);
 
-            // Notify Reception
             $receptionUsers = User::where('role', 'reception')->orWhere('role', 'superadmin')->get();
             foreach ($receptionUsers as $receptor) {
                 Notification::create([
@@ -242,8 +250,6 @@ class OrderController extends Controller
                     route('reception.dashboard')
                 ));
             }
-            // This would be a "Cancel Print" to kitchen
-            // For simulation: return redirect()->route('some.print.preview.cancel', ['order' => $order, 'item' => $orderItem]);
         }
 
         return back()->with('success', 'Item cancelled from order.');
@@ -251,28 +257,72 @@ class OrderController extends Controller
 
     public function cancelItemAndPrintNotification(Order $order, OrderItem $orderItem)
     {
-        // Ensure the item gets cancelled and a cancellation ticket is printed (handled in removeItem)
         return $this->removeItem($order, $orderItem);
+    }
+
+    public function fireItem(Order $order, OrderItem $orderItem)
+    {
+        if ($order->id !== $orderItem->order_id) abort(403);
+        $orderItem->fired_at = now();
+        $orderItem->status = 'fired';
+        $orderItem->save();
+        event(new OrderUpdated($order));
+        return back()->with('success', 'Item fired to kitchen.');
+    }
+
+    public function holdItem(Order $order, OrderItem $orderItem)
+    {
+        if ($order->id !== $orderItem->order_id) abort(403);
+        $orderItem->status = 'hold';
+        $orderItem->save();
+        event(new OrderUpdated($order));
+        return back()->with('success', 'Item put on hold.');
+    }
+
+    public function transferItem(Request $request, Order $order, OrderItem $orderItem)
+    {
+        $request->validate(['target_order_id' => 'required|exists:orders,id']);
+        if ($order->id !== $orderItem->order_id) abort(403);
+        $target = Order::findOrFail($request->target_order_id);
+        $orderItem->order_id = $target->id;
+        $orderItem->save();
+        $order->calculateTotal();
+        $target->calculateTotal();
+        event(new OrderUpdated($order));
+        event(new OrderUpdated($target));
+        return back()->with('success', 'Item transferred.');
+    }
+
+    public function splitOrder(Request $request, Order $order)
+    {
+        $request->validate(['item_ids' => 'required|array', 'item_ids.*' => 'exists:order_items,id']);
+        $child = Order::create([
+            'restaurant_table_id' => $order->restaurant_table_id,
+            'user_id' => Auth::id(),
+            'customer_count' => $order->customer_count,
+            'status' => 'pending',
+            'parent_order_id' => $order->id,
+        ]);
+        // Move selected items
+        OrderItem::whereIn('id', $request->item_ids)->where('order_id', $order->id)->update(['order_id' => $child->id]);
+        $order->calculateTotal();
+        $child->calculateTotal();
+        event(new OrderUpdated($order));
+        event(new OrderUpdated($child));
+        return redirect()->route('waiter.orders.show', $child)->with('success', 'Split bill created.');
     }
 
     public function printToKitchen(Request $request, Order $order, PrinterService $printer) 
     {
-        // Logic to determine what needs printing (new items, modified quantities)
-        // For this example, let's assume we print items not yet marked `printed_to_kitchen = true`
-        // or items whose status implies they need re-printing.
-
         DB::beginTransaction();
         try {
             $itemsToPrint = $order->orderItems()
                 ->where('printed_to_kitchen', false)
-                ->where('status', '!=', 'cancelled') // Don't print cancelled items as new
+                ->where('status', '!=', 'cancelled')
                 ->with('menuItem')
                 ->get();
 
-            if ($itemsToPrint->isEmpty() && !$request->input('force_reprint_all')) { // Add a way to reprint all if needed
-                // Check for items that were modified and need re-printing (status changed, etc.)
-                // This logic can get complex depending on requirements.
-                // For now, if nothing explicitly new, assume no print needed unless forced.
+            if ($itemsToPrint->isEmpty() && !$request->input('force_reprint_all')) {
                 return back()->with('info', 'No new items to print for the kitchen.');
             }
 
@@ -281,6 +331,7 @@ class OrderController extends Controller
                     'name' => $item->menuItem->name,
                     'quantity' => $item->quantity,
                     'notes' => $item->item_notes,
+                    'course' => $item->course,
                 ];
             })->toArray();
 
@@ -294,56 +345,47 @@ class OrderController extends Controller
                         'name' => $item->menuItem->name,
                         'quantity' => $item->quantity,
                         'notes' => $item->item_notes,
+                        'course' => $item->course,
                     ];
                 })->toArray();
             }
 
-
-            // Record the print job
             KitchenPrint::create([
                 'order_id' => $order->id,
-                'type' => $order->kitchenPrints()->count() == 0 ? 'new_order' : 'add_item', // Or 'modify_order'
+                'type' => $order->kitchenPrints()->count() == 0 ? 'new_order' : 'add_item',
                 'print_content' => $printContent,
                 'user_id' => Auth::id(),
             ]);
 
-            // Send to printer stub
             $printer->printKitchenTicket($order, $printContent);
 
-            // Mark items as printed
             foreach ($itemsToPrint as $item) {
                 $item->printed_to_kitchen = true;
-                $item->status = 'sent_to_kitchen'; // Update status
+                $item->status = $item->status === 'hold' ? 'hold' : 'sent_to_kitchen';
                 $item->save();
             }
             if ($request->input('force_reprint_all')) {
                 $order->orderItems()->where('status', '!=', 'cancelled')->update([
                     'printed_to_kitchen' => true,
-                    'status' => 'sent_to_kitchen'
+                    'status' => DB::raw("CASE WHEN status = 'hold' THEN 'hold' ELSE 'sent_to_kitchen' END")
                 ]);
             }
 
-
-            if ($order->status == 'pending') { // First print
+            if ($order->status == 'pending') {
                 $order->status = 'preparing';
                 $order->save();
             }
 
             DB::commit();
-            event(new OrderUpdated($order)); // Trigger event
+            event(new OrderUpdated($order));
 
-            // In a real app, this would trigger a physical print.
-            // For now, show a preview or just a success message.
-            // We can pass $printContent to a view for "print preview".
             session()->flash('kitchen_print_content', $printContent);
             session()->flash('kitchen_print_order_id', $order->id);
             session()->flash('kitchen_print_table_name', $order->restaurantTable->name);
 
-
             return back()->with('success', 'Order sent to kitchen!');
         } catch (\Exception $e) {
             DB::rollBack();
-            // Log::error('Kitchen Print Error: ' . $e->getMessage());
             return back()->with('error', 'Failed to send order to kitchen. ' . $e->getMessage());
         }
     }

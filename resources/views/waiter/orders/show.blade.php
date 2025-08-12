@@ -135,6 +135,23 @@
                             @if($orderItem->item_notes)
                             <small class="d-block text-muted fst-italic mt-1">Notes: {{ $orderItem->item_notes }}</small>
                             @endif
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                <form action="{{ route('waiter.orders.items.hold', [$order->id, $orderItem->id]) }}" method="POST" class="d-inline">@csrf
+                                    <button class="btn btn-sm btn-outline-secondary" {{ $order->status==='paid'?'disabled':'' }}>Hold</button>
+                                </form>
+                                <form action="{{ route('waiter.orders.items.fire', [$order->id, $orderItem->id]) }}" method="POST" class="d-inline">@csrf
+                                    <button class="btn btn-sm btn-outline-danger" {{ $order->status==='paid'?'disabled':'' }}>Fire</button>
+                                </form>
+                                <form action="{{ route('waiter.orders.items.transfer', [$order->id, $orderItem->id]) }}" method="POST" class="d-flex gap-2 align-items-center">@csrf
+                                    <select name="target_order_id" class="form-select form-select-sm" style="width:auto;min-width:160px">
+                                        <option value="">Transfer to order...</option>
+                                        @foreach($openOrders as $o)
+                                            <option value="{{ $o->id }}">#{{ $o->id }} (Table {{ $o->restaurant_table_id }})</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-primary" {{ $order->status==='paid'?'disabled':'' }}>Transfer</button>
+                                </form>
+                            </div>
                         </li>
                         @endforeach
                     </ul>
@@ -158,8 +175,43 @@
                                 <i class="bi bi-printer"></i> Reprint Entire Order
                             </button>
                         </form>
+                        <form action="{{ route('waiter.orders.split', $order->id) }}" method="POST" class="mt-2">
+                            @csrf
+                            <input type="hidden" name="item_ids" id="splitItemIds">
+                            <button type="submit" class="btn btn-warning w-100">Split Selected Items to New Bill</button>
+                        </form>
                     @endif
                 </div>
+
+                @push('scripts')
+                <script>
+                    // Allow selecting items to split by clicking list items
+                    (function(){
+                        const selected = new Set();
+                        document.querySelectorAll('.list-group-item').forEach((li) => {
+                            const idMatch = li.innerHTML.match(/data-item-id=\"(\d+)\"/);
+                        });
+                        // Simpler: add checkboxes next to items
+                        const items = document.querySelectorAll('.list-group-item');
+                        items.forEach((li, idx) => {
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.className = 'form-check-input me-2';
+                            checkbox.addEventListener('change', () => {
+                                const id = li.querySelector('[name="item_id"]').value;
+                                if (checkbox.checked) selected.add(id); else selected.delete(id);
+                                document.getElementById('splitItemIds').value = JSON.stringify(Array.from(selected));
+                            });
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = 'item_id';
+                            hidden.value = li.querySelector('form[action*="remove-item"]').getAttribute('action').match(/item\/(\d+)/)[1];
+                            li.prepend(checkbox);
+                            li.appendChild(hidden);
+                        });
+                    })();
+                </script>
+                @endpush
             </div>
         </div>
     </div>
