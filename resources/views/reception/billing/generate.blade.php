@@ -39,7 +39,7 @@
                         <tfoot>
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
-                                <td class="text-end">${{ number_format($order->orderItems->where('status', '!=', 'cancelled')->sum(fn($i) => $i->price_at_order * $i->quantity), 2) }}</td>
+                                <td class="text-end"><span id="subtotal">${{ number_format($order->orderItems->where('status', '!=', 'cancelled')->sum(fn($i) => $i->price_at_order * $i->quantity), 2) }}</span></td>
                             </tr>
                             <tr>
                                 <td colspan="4">
@@ -47,19 +47,19 @@
                                         @csrf
                                         <div class="col-6 col-md-3">
                                             <label class="form-label">Discount</label>
-                                            <input type="number" step="0.01" min="0" name="discount_amount" value="{{ $order->discount_amount }}" class="form-control">
+                                            <input type="number" step="0.01" min="0" name="discount_amount" id="discount" value="{{ $order->discount_amount }}" class="form-control">
                                         </div>
                                         <div class="col-6 col-md-3">
                                             <label class="form-label">Tax</label>
-                                            <input type="number" step="0.01" min="0" name="tax_amount" value="{{ $order->tax_amount }}" class="form-control">
+                                            <input type="number" step="0.01" min="0" name="tax_amount" id="tax" value="{{ $order->tax_amount }}" class="form-control">
                                         </div>
                                         <div class="col-6 col-md-3">
                                             <label class="form-label">Service Charge</label>
-                                            <input type="number" step="0.01" min="0" name="service_charge_amount" value="{{ $order->service_charge_amount }}" class="form-control">
+                                            <input type="number" step="0.01" min="0" name="service_charge_amount" id="service" value="{{ $order->service_charge_amount }}" class="form-control">
                                         </div>
                                         <div class="col-6 col-md-3">
                                             <label class="form-label">Tip</label>
-                                            <input type="number" step="0.01" min="0" name="tip_amount" value="{{ $order->tip_amount }}" class="form-control">
+                                            <input type="number" step="0.01" min="0" name="tip_amount" id="tip" value="{{ $order->tip_amount }}" class="form-control">
                                         </div>
                                         <div class="col-12">
                                             <button class="btn btn-outline-primary">Update Totals</button>
@@ -68,8 +68,8 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td colspan="3" class="text-end"><strong>Final Total:</strong></td>
-                                <td class="text-end"><strong>${{ number_format($order->final_total ?? $order->total_amount, 2) }}</strong></td>
+                                <td colspan="3" class="text-end"><strong>Final Total (Live):</strong></td>
+                                <td class="text-end"><strong><span id="finalTotal">${{ number_format($order->final_total ?? $order->total_amount, 2) }}</span></strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -105,4 +105,24 @@
         body { font-size: 12pt; }
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    (function(){
+        function toNum(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+        const subtotalEl = document.getElementById('subtotal');
+        const finalEl = document.getElementById('finalTotal');
+        const discount = document.getElementById('discount');
+        const tax = document.getElementById('tax');
+        const service = document.getElementById('service');
+        const tip = document.getElementById('tip');
+        const base = parseFloat(subtotalEl.textContent.replace(/[^0-9.]/g,'')) || 0;
+        const recalc = () => {
+            const final = Math.max(0, base - toNum(discount.value)) + toNum(tax.value) + toNum(service.value) + toNum(tip.value);
+            finalEl.textContent = '$' + final.toFixed(2);
+        };
+        [discount, tax, service, tip].forEach(i => i && i.addEventListener('input', recalc));
+    })();
+</script>
 @endpush

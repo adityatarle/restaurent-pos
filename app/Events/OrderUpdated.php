@@ -32,6 +32,7 @@ class OrderUpdated
                             'customer_count' => $this->order->customer_count,
                             'status' => $this->order->status,
                             'total_amount' => $this->order->total_amount,
+                            'final_total' => $this->order->final_total,
                             'updated_at' => $this->order->updated_at->toDateTimeString(),
                             'order_items' => $this->order->orderItems->map(function ($item) {
                                 return [
@@ -42,6 +43,7 @@ class OrderUpdated
                                     'item_notes' => $item->item_notes,
                                     'status' => $item->status,
                                     'printed_to_kitchen' => $item->printed_to_kitchen,
+                                    'created_at' => $item->created_at?->toDateTimeString(),
                                 ];
                             })->toArray(),
                         ],
