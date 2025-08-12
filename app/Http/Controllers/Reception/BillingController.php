@@ -49,4 +49,20 @@ class BillingController extends Controller
 
         return redirect()->route('reception.dashboard')->with('success', "Order #{$order->id} marked as paid. Table {$table->name} is now available.");
     }
+
+    public function updateTotals(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'discount_amount' => 'nullable|numeric|min:0',
+            'tax_amount' => 'nullable|numeric|min:0',
+            'service_charge_amount' => 'nullable|numeric|min:0',
+            'tip_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        $order->fill($data);
+        $order->calculateTotal();
+        event(new OrderUpdated($order));
+
+        return back()->with('success', 'Totals updated.');
+    }
 }

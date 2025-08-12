@@ -46,4 +46,17 @@ class WaiterDashboardController extends Controller
 
         return redirect()->route('waiter.orders.show', $order)->with('success', 'Table assigned. Start taking the order.');
     }
+
+    public function requestBill(RestaurantTable $table)
+    {
+        $order = $table->currentOrder()->first();
+        if (!$order) {
+            return back()->with('error', 'No active order for this table.');
+        }
+        event(new \App\Events\NotificationPushed(
+            "Bill requested for Table {$table->name} (Order #{$order->id}).",
+            route('reception.dashboard')
+        ));
+        return back()->with('success', 'Reception notified for bill.');
+    }
 }

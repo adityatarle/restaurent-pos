@@ -43,6 +43,7 @@ Route::middleware(['auth', 'reception'])->prefix('reception')->name('reception.'
     Route::resource('categories', MenuCategoryController::class);
     Route::resource('menu-items', MenuItemController::class);
     Route::get('orders/{order}/bill', [BillingController::class, 'generateBill'])->name('bill.generate');
+    Route::post('orders/{order}/bill/update', [BillingController::class, 'updateTotals'])->name('bill.update');
     Route::post('orders/{order}/pay', [BillingController::class, 'markAsPaid'])->name('bill.pay');
     Route::post('tables/{table}/vacate', [\App\Http\Controllers\Reception\TableController::class, 'vacate'])->name('tables.vacate');
     Route::get('notifications', [NotificationController::class, 'indexForReception'])->name('notifications.index');
@@ -56,6 +57,7 @@ Route::middleware(['auth', 'waiter'])->prefix('waiter')->name('waiter.')->group(
     // Table Assignment
     Route::post('tables/{table}/assign', [WaiterDashboardController::class, 'assignTable'])->name('tables.assign');
     Route::post('tables/{table}/unassign', [WaiterDashboardController::class, 'unassignTable'])->name('tables.unassign'); // If needed
+    Route::post('tables/{table}/request-bill', [WaiterDashboardController::class, 'requestBill'])->name('tables.request_bill');
 
     // Order Management
     Route::get('orders/create/{table}', [WaiterOrderController::class, 'create'])->name('orders.create'); // Start order for table

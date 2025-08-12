@@ -89,6 +89,11 @@ class OrderController extends Controller
         $table->status = 'occupied';
         $table->save();
         event(new \App\Events\TableAssigned($table, $order));
+        // Notify reception that a new order started
+        event(new \App\Events\NotificationPushed(
+            "New order #{$order->id} started at Table {$table->name} (Guests: {$order->customer_count}).",
+            route('reception.dashboard')
+        ));
         return redirect()->route('waiter.orders.show', $order)->with('success', 'Order started for table.');
     }
 

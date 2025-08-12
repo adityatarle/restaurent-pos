@@ -13,28 +13,7 @@
     }
 @endphp
 
-@section('sidebar')
-    <div class="p-3"> {{-- Add padding to the sidebar's content wrapper --}}
-        <h5 class="mb-3">Categories</h5>
-        <ul class="nav flex-column nav-pills">
-            @if($categories->isEmpty())
-                <li class="nav-item"><span class="nav-link text-muted">No categories found.</span></li>
-            @endif
-            @foreach($categories as $category)
-            <li class="nav-item">
-                <a class="nav-link {{ $selectedCategoryId == $category->id ? 'active' : '' }}"
-                   href="{{ route('waiter.orders.show', ['order' => $order->id, 'category_id' => $category->id]) }}">
-                    <i class="bi bi-tag-fill me-2"></i>{{ $category->name }}
-                </a>
-            </li>
-            @endforeach
-        </ul>
-        <hr>
-        <a href="{{ route('waiter.dashboard') }}" class="btn btn-outline-secondary w-100 mt-3">
-            <i class="bi bi-arrow-left-circle me-2"></i>Back to Tables
-        </a>
-    </div>
-@endsection
+
 
 @section('content')
 <div class="container-fluid">
@@ -43,7 +22,19 @@
         <div class="col-lg-7 col-md-6">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3>Menu Items {{ $selectedCategoryId && $currentCategory ? '('.$currentCategory->name.')' : '' }}</h3>
-                <span class="badge bg-info fs-6">Order #{{ $order->id }} for Table: {{ $order->restaurantTable->name }}</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-info fs-6">Order #{{ $order->id }} - Table {{ $order->restaurantTable->name }}</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Category</button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @forelse($categories as $category)
+                            <li><a class="dropdown-item {{ $selectedCategoryId == $category->id ? 'active' : '' }}" href="{{ route('waiter.orders.show', ['order' => $order->id, 'category_id' => $category->id]) }}">{{ $category->name }}</a></li>
+                            @empty
+                            <li><span class="dropdown-item text-muted">No categories</span></li>
+                            @endforelse
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             @if($order->status === 'paid' || $order->status === 'cancelled')
