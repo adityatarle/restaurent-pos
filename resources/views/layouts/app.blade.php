@@ -214,6 +214,21 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Optional: basic reconnection/backoff for socket.io global
+        if (window.io) {
+            const socket = io('http://localhost:3000', { withCredentials: true, reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
+            window.appSocket = socket;
+            @auth
+            socket.on('connect', () => {
+                socket.emit('authenticate', {
+                    token: '{{ auth()->user()->createToken("socket")->plainTextToken }}',
+                    role: '{{ auth()->user()->role }}',
+                });
+            });
+            @endauth
+        }
+    </script>
     @stack('scripts')
 </body>
 </html>

@@ -38,10 +38,14 @@ class BillingController extends Controller
         if ($table) {
             $table->status = 'available';
             $table->save();
-            event(new TableAssigned($table, null)); // Trigger table event
+            event(new TableAssigned($table, null));
         }
 
-        event(new OrderUpdated($order)); // Trigger order event
+        event(new OrderUpdated($order));
+        event(new \App\Events\NotificationPushed(
+            "Order #{$order->id} has been paid. Table {$table->name} is now available.",
+            route('reception.dashboard')
+        ));
 
         return redirect()->route('reception.dashboard')->with('success', "Order #{$order->id} marked as paid. Table {$table->name} is now available.");
     }
