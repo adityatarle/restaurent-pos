@@ -138,6 +138,9 @@
         alert.className = 'alert alert-info';
         alert.innerHTML = payload.link ? `<a href="${payload.link}">${payload.message}</a>` : payload.message;
         box.prepend(alert);
+        // Also refresh tables/orders quickly so the dashboard reflects changes instantly
+        fetch('/reception/tables').then(r=>r.json()).then(renderTables);
+        fetch('/reception/orders').then(r=>r.json()).then(renderOrders);
     });
 
     loadData();

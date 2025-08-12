@@ -28,7 +28,7 @@ class NotificationPushed
                         'link' => $this->link,
                         'created_at' => now()->toDateTimeString(),
                     ],
-                    'roles' => ['reception', 'superadmin'],
+                    'roles' => ['reception', 'superadmin', 'waiter'],
                 ],
             ]);
         } catch (\Exception $e) {

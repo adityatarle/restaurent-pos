@@ -234,7 +234,7 @@
             socket.on('notification', (payload) => {
                 const container = document.getElementById('toastContainer');
                 const wrapper = document.createElement('div');
-                wrapper.className = 'toast align-items-center text-bg-info border-0 show mb-2';
+                wrapper.className = 'toast align-items-center text-bg-primary border-0 show mb-2';
                 wrapper.setAttribute('role', 'alert');
                 wrapper.setAttribute('aria-live', 'assertive');
                 wrapper.setAttribute('aria-atomic', 'true');
