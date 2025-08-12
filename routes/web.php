@@ -91,13 +91,13 @@ Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->name('superadmi
 
     // Reports
     Route::get('reports/expenses', [ReportController::class, 'monthlyExpenses'])->name('reports.expenses');
-    // Add more report routes here (e.g., inventory valuation, low stock)
-});
-
-Route::middleware(['auth', 'superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
-    // ... other routes ...
-    Route::get('reports/expenses', [ReportController::class, 'monthlyExpenses'])->name('reports.expenses');
-    // ...
+    Route::get('reports/sales/summary', [ReportController::class, 'salesSummary'])->name('reports.sales.summary');
+    Route::get('reports/sales/by-item', [ReportController::class, 'salesByItem'])->name('reports.sales.by_item');
+    Route::get('reports/sales/by-category', [ReportController::class, 'salesByCategory'])->name('reports.sales.by_category');
+    Route::get('reports/sales/by-waiter', [ReportController::class, 'salesByWaiter'])->name('reports.sales.by_waiter');
+    Route::get('reports/inventory/valuation', [ReportController::class, 'inventoryValuation'])->name('reports.inventory.valuation');
+    Route::get('reports/inventory/low-stock', [ReportController::class, 'lowStockReport'])->name('reports.inventory.low_stock');
+    Route::get('reports/purchases/by-supplier', [ReportController::class, 'purchasesBySupplier'])->name('reports.purchases.by_supplier');
 });
 
 Route::middleware(['auth', 'reception'])->prefix('reception')->name('reception.')->group(function () {

@@ -75,7 +75,9 @@
     <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
         <li><a class="dropdown-item" href="{{ route('superadmin.inventory-items.index') }}">Inventory Items</a></li>
         <li><a class="dropdown-item" href="{{ route('superadmin.suppliers.index') }}">Suppliers</a></li>
-        {{-- Add more inventory related links like stock reports if you build them --}}
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.inventory.valuation') }}">Inventory Valuation</a></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.inventory.low_stock') }}">Low Stock</a></li>
     </ul>
 </li>
 <li class="nav-item dropdown">
@@ -85,15 +87,21 @@
     <ul class="dropdown-menu" aria-labelledby="expensesDropdown">
         <li><a class="dropdown-item" href="{{ route('superadmin.expenses.index') }}">Manage Expenses</a></li>
         <li><a class="dropdown-item" href="{{ route('superadmin.expense-categories.index') }}">Expense Categories</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.expenses') }}">Monthly Expenses</a></li>
     </ul>
 </li>
 <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Reports
+        Sales
     </a>
     <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.expenses') }}">Monthly Expenses</a></li>
-        {{-- More reports --}}
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.summary') }}">Sales Summary</a></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_item') }}">Sales by Item</a></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_category') }}">Sales by Category</a></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_waiter') }}">Sales by Waiter</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{{ route('superadmin.reports.purchases.by_supplier') }}">Purchases by Supplier</a></li>
     </ul>
 </li>
                             @endif
