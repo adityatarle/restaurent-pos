@@ -135,12 +135,21 @@
                             @if($orderItem->item_notes)
                             <small class="d-block text-muted fst-italic mt-1">Notes: {{ $orderItem->item_notes }}</small>
                             @endif
-                            <div class="mt-2 d-flex gap-2">
+                            <div class="mt-2 d-flex flex-wrap gap-2">
                                 <form action="{{ route('waiter.orders.items.hold', [$order->id, $orderItem->id]) }}" method="POST" class="d-inline">@csrf
                                     <button class="btn btn-sm btn-outline-secondary" {{ $order->status==='paid'?'disabled':'' }}>Hold</button>
                                 </form>
                                 <form action="{{ route('waiter.orders.items.fire', [$order->id, $orderItem->id]) }}" method="POST" class="d-inline">@csrf
                                     <button class="btn btn-sm btn-outline-danger" {{ $order->status==='paid'?'disabled':'' }}>Fire</button>
+                                </form>
+                                <form action="{{ route('waiter.orders.items.transfer', [$order->id, $orderItem->id]) }}" method="POST" class="d-flex gap-2 align-items-center">@csrf
+                                    <select name="target_order_id" class="form-select form-select-sm" style="width:auto;min-width:160px">
+                                        <option value="">Transfer to order...</option>
+                                        @foreach($openOrders as $o)
+                                            <option value="{{ $o->id }}">#{{ $o->id }} (Table {{ $o->restaurant_table_id }})</option>
+                                        @endforeach
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-primary" {{ $order->status==='paid'?'disabled':'' }}>Transfer</button>
                                 </form>
                             </div>
                         </li>

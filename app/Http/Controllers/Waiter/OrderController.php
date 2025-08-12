@@ -70,8 +70,13 @@ class OrderController extends Controller
         $categories = Category::with(['menuItems' => function ($query) {
             $query->where('is_available', true)->orderBy('name');
         }])->orderBy('name')->get();
+        $tables = RestaurantTable::orderBy('name')->get();
+        $openOrders = Order::whereNotIn('status', ['paid', 'cancelled'])
+            ->where('id', '!=', $order->id)
+            ->orderByDesc('id')
+            ->get();
 
-        return view('waiter.orders.show', compact('order', 'categories'));
+        return view('waiter.orders.show', compact('order', 'categories', 'tables', 'openOrders'));
     }
 
     public function create(RestaurantTable $table)
