@@ -44,6 +44,7 @@ Route::middleware(['auth', 'reception'])->prefix('reception')->name('reception.'
     Route::resource('menu-items', MenuItemController::class);
     Route::get('orders/{order}/bill', [BillingController::class, 'generateBill'])->name('bill.generate');
     Route::post('orders/{order}/pay', [BillingController::class, 'markAsPaid'])->name('bill.pay');
+    Route::post('tables/{table}/vacate', [\App\Http\Controllers\Reception\TableController::class, 'vacate'])->name('tables.vacate');
     Route::get('notifications', [NotificationController::class, 'indexForReception'])->name('notifications.index');
 });
 
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'waiter'])->prefix('waiter')->name('waiter.')->group(
     Route::delete('orders/{order}/item/{orderItem}', [WaiterOrderController::class, 'removeItem'])->name('orders.remove-item');
     Route::post('orders/{order}/print-kitchen', [WaiterOrderController::class, 'printToKitchen'])->name('orders.print-kitchen');
     Route::post('orders/{order}/item/{orderItem}/cancel-print', [WaiterOrderController::class, 'cancelItemAndPrintNotification'])->name('orders.item.cancel-print');
+    Route::post('orders/{order}/cancel', [WaiterOrderController::class, 'cancel'])->name('orders.cancel');
 });
 
 // Shared Notification Routes (could be placed elsewhere too)
