@@ -28,32 +28,31 @@
         }
         #sidebar {
             flex-shrink: 0; /* Prevents sidebar from shrinking if content is wide */
-            width: 280px;   /* Or your preferred fixed width */
+            width: 260px;   /* Sidebar width */
             overflow-y: auto; /* Allows sidebar content to scroll if it's too long */
-            /* Consider adding bg-light, border-end directly or via Bootstrap classes */
+            transition: width .2s ease-in-out;
         }
-        .content-wrapper {
-            flex-grow: 1; /* Allows content area to take up remaining horizontal space */
-            overflow-y: auto; /* Allows main content to scroll independently */
-            /* Padding (e.g., p-3 or p-4) will be added via Bootstrap class */
-        }
+        #sidebar.collapsed { width: 64px; }
+        #sidebar .nav-link { display: flex; align-items: center; gap: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #sidebar.collapsed .nav-link { justify-content: center; }
+        #sidebar.collapsed .nav-link .label { display: none; }
+        .content-wrapper { flex-grow: 1; overflow-y: auto; }
 
         /* Helper for sticky elements within the .content-wrapper */
-        .sticky-in-content {
-            position: sticky;
-            top: 1rem; /* Adjust based on .content-wrapper's padding */
-            z-index: 1020; /* Default Bootstrap sticky-top z-index */
-        }
+        .sticky-in-content { position: sticky; top: 1rem; z-index: 1020; }
+
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
     </style>
     @stack('styles')
-<style>
-.toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
-</style>
+    <style>
+    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
+    </style>
 </head>
 <body class="h-100"> {{-- Bootstrap class for 100% height --}}
     <div id="app">
         <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
             <div class="container-fluid">
+                <button id="sidebarToggle" class="btn btn-outline-light me-2" type="button"><i class="bi bi-list"></i></button>
                 <a class="navbar-brand" href="{{ url('/') }}">
                     {{ config('app.name', 'Laravel Restaurant') }}
                 </a>
@@ -61,68 +60,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar (Content as before) -->
-                    <ul class="navbar-nav me-auto">
-                        @auth
-                            @if(Auth::user()->isSuperAdmin())
-                                <li class="nav-item"><a class="nav-link" href="{{ route('superadmin.dashboard') }}">Admin Dashboard</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ route('superadmin.users.index') }}">Users</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ route('superadmin.tables.index') }}">Table Layout</a></li>
-                                <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="inventoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Inventory
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
-        <li><a class="dropdown-item" href="{{ route('superadmin.inventory-items.index') }}">Inventory Items</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.suppliers.index') }}">Suppliers</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.inventory.valuation') }}">Inventory Valuation</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.inventory.low_stock') }}">Low Stock</a></li>
-    </ul>
-</li>
-<li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="expensesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Expenses
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="expensesDropdown">
-        <li><a class="dropdown-item" href="{{ route('superadmin.expenses.index') }}">Manage Expenses</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.expense-categories.index') }}">Expense Categories</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.expenses') }}">Monthly Expenses</a></li>
-    </ul>
-</li>
-<li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Sales
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.summary') }}">Sales Summary</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_item') }}">Sales by Item</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_category') }}">Sales by Category</a></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.sales.by_waiter') }}">Sales by Waiter</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{{ route('superadmin.reports.purchases.by_supplier') }}">Purchases by Supplier</a></li>
-    </ul>
-</li>
-                            @endif
-                            @if(Auth::user()->isReception() || Auth::user()->isSuperAdmin())
-                                <li class="nav-item"><a class="nav-link" href="{{ route('reception.dashboard') }}">Reception Dashboard</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ route('reception.categories.index') }}">Categories</a></li>
-                                <li class="nav-item"><a class="nav-link" href="{{ route('reception.menu-items.index') }}">Menu Items</a></li>
-                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('reception.notifications.index') }}">
-                                        Notifications
-                                        @php $unreadCount = Auth::user()->notifications()->where('is_read', false)->count(); @endphp
-                                        @if($unreadCount > 0) <span class="badge bg-danger">{{ $unreadCount }}</span> @endif
-                                    </a>
-                                </li>
-                            @endif
-                            @if(Auth::user()->isWaiter() || Auth::user()->isSuperAdmin())
-                                <li class="nav-item"><a class="nav-link" href="{{ route('waiter.dashboard') }}">Waiter Dashboard</a></li>
-                            @endif
-                        @endauth
-                    </ul>
-                    <!-- Right Side Of Navbar (Content as before) -->
+                    <ul class="navbar-nav me-auto"></ul>
                     <ul class="navbar-nav ms-auto">
                         @guest
                             @if (Route::has('login')) <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a></li> @endif
@@ -143,12 +81,56 @@
         </nav>
 
         <div class="main-wrapper">
-            @hasSection('sidebar')
-                <aside id="sidebar" class="bg-light border-end shadow-sm">
-                    {{-- The @yield('sidebar') content should ideally have its own padding --}}
-                    @yield('sidebar')
-                </aside>
-            @endif
+            @auth
+            <aside id="sidebar" class="bg-light border-end shadow-sm">
+                <nav class="nav flex-column p-2">
+                    {{-- Common Links --}}
+                    <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="/"><i class="bi bi-house"></i><span class="label"> Home</span></a>
+
+                    {{-- Waiter --}}
+                    @if(Auth::user()->isWaiter() || Auth::user()->isSuperAdmin())
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Waiter</div>
+                        <a class="nav-link {{ request()->routeIs('waiter.dashboard') ? 'active' : '' }}" href="{{ route('waiter.dashboard') }}"><i class="bi bi-grid"></i><span class="label"> Table View</span></a>
+                    @endif
+
+                    {{-- Reception --}}
+                    @if(Auth::user()->isReception() || Auth::user()->isSuperAdmin())
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Reception</div>
+                        <a class="nav-link {{ request()->routeIs('reception.dashboard') ? 'active' : '' }}" href="{{ route('reception.dashboard') }}"><i class="bi bi-speedometer2"></i><span class="label"> Dashboard</span></a>
+                        <a class="nav-link {{ request()->routeIs('reception.categories.*') ? 'active' : '' }}" href="{{ route('reception.categories.index') }}"><i class="bi bi-tags"></i><span class="label"> Categories</span></a>
+                        <a class="nav-link {{ request()->routeIs('reception.menu-items.*') ? 'active' : '' }}" href="{{ route('reception.menu-items.index') }}"><i class="bi bi-list-columns"></i><span class="label"> Menu Items</span></a>
+                        <a class="nav-link {{ request()->routeIs('reception.notifications.*') ? 'active' : '' }}" href="{{ route('reception.notifications.index') }}">
+                            <i class="bi bi-bell"></i><span class="label"> Notifications</span>
+                            @php $unreadCount = Auth::user()->notifications()->where('is_read', false)->count(); @endphp
+                            @if($unreadCount > 0) <span class="badge bg-danger ms-auto">{{ $unreadCount }}</span> @endif
+                        </a>
+                    @endif
+
+                    {{-- Super Admin --}}
+                    @if(Auth::user()->isSuperAdmin())
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Admin</div>
+                        <a class="nav-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}" href="{{ route('superadmin.dashboard') }}"><i class="bi bi-person-gear"></i><span class="label"> Admin Dashboard</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.users.*') ? 'active' : '' }}" href="{{ route('superadmin.users.index') }}"><i class="bi bi-people"></i><span class="label"> Users</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.tables.*') ? 'active' : '' }}" href="{{ route('superadmin.tables.index') }}"><i class="bi bi-layout-text-sidebar"></i><span class="label"> Table Layout</span></a>
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Inventory</div>
+                        <a class="nav-link {{ request()->routeIs('superadmin.inventory-items.*') ? 'active' : '' }}" href="{{ route('superadmin.inventory-items.index') }}"><i class="bi bi-boxes"></i><span class="label"> Items</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.suppliers.*') ? 'active' : '' }}" href="{{ route('superadmin.suppliers.index') }}"><i class="bi bi-truck"></i><span class="label"> Suppliers</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.inventory.valuation') ? 'active' : '' }}" href="{{ route('superadmin.reports.inventory.valuation') }}"><i class="bi bi-cash-coin"></i><span class="label"> Valuation</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.inventory.low_stock') ? 'active' : '' }}" href="{{ route('superadmin.reports.inventory.low_stock') }}"><i class="bi bi-exclamation-triangle"></i><span class="label"> Low Stock</span></a>
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Expenses</div>
+                        <a class="nav-link {{ request()->routeIs('superadmin.expenses.*') ? 'active' : '' }}" href="{{ route('superadmin.expenses.index') }}"><i class="bi bi-wallet2"></i><span class="label"> Manage Expenses</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.expense-categories.*') ? 'active' : '' }}" href="{{ route('superadmin.expense-categories.index') }}"><i class="bi bi-ui-checks-grid"></i><span class="label"> Expense Categories</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.expenses') ? 'active' : '' }}" href="{{ route('superadmin.reports.expenses') }}"><i class="bi bi-graph-down"></i><span class="label"> Monthly Expenses</span></a>
+                        <div class="text-uppercase text-muted small mt-3 mb-1 px-2">Sales</div>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.sales.summary') ? 'active' : '' }}" href="{{ route('superadmin.reports.sales.summary') }}"><i class="bi bi-activity"></i><span class="label"> Summary</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.sales.by_item') ? 'active' : '' }}" href="{{ route('superadmin.reports.sales.by_item') }}"><i class="bi bi-list-ul"></i><span class="label"> By Item</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.sales.by_category') ? 'active' : '' }}" href="{{ route('superadmin.reports.sales.by_category') }}"><i class="bi bi-grid-3x3-gap"></i><span class="label"> By Category</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.sales.by_waiter') ? 'active' : '' }}" href="{{ route('superadmin.reports.sales.by_waiter') }}"><i class="bi bi-person-check"></i><span class="label"> By Waiter</span></a>
+                        <a class="nav-link {{ request()->routeIs('superadmin.reports.purchases.by_supplier') ? 'active' : '' }}" href="{{ route('superadmin.reports.purchases.by_supplier') }}"><i class="bi bi-bag-check"></i><span class="label"> Purchases by Supplier</span></a>
+                    @endif
+                </nav>
+            </aside>
+            @endauth
 
             <main class="content-wrapper p-4"> {{-- Added p-4 for padding around content --}}
                 @if (session('success'))
@@ -227,6 +209,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <div class="toast-container" id="toastContainer"></div>
     <script>
+        // Sidebar toggle persistence
+        (function(){
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('sidebarToggle');
+            if (sidebar && btn) {
+                const key = 'sidebarCollapsed';
+                const saved = localStorage.getItem(key);
+                if (saved === '1') sidebar.classList.add('collapsed');
+                btn.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem(key, sidebar.classList.contains('collapsed') ? '1' : '0');
+                });
+            }
+        })();
+
         // Optional: basic reconnection/backoff for socket.io global
         if (window.io) {
             const socket = io('http://localhost:3000', { withCredentials: true, reconnection: true, reconnectionDelay: 1000, reconnectionDelayMax: 5000 });
