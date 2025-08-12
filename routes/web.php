@@ -69,6 +69,11 @@ Route::middleware(['auth', 'waiter'])->prefix('waiter')->name('waiter.')->group(
     Route::post('orders/{order}/print-kitchen', [WaiterOrderController::class, 'printToKitchen'])->name('orders.print-kitchen');
     Route::post('orders/{order}/item/{orderItem}/cancel-print', [WaiterOrderController::class, 'cancelItemAndPrintNotification'])->name('orders.item.cancel-print');
     Route::post('orders/{order}/cancel', [WaiterOrderController::class, 'cancel'])->name('orders.cancel');
+
+    // New actions
+    Route::post('orders/{order}/items/{orderItem}/fire', [WaiterOrderController::class, 'fireItem'])->name('orders.items.fire');
+    Route::post('orders/{order}/items/{orderItem}/hold', [WaiterOrderController::class, 'holdItem'])->name('orders.items.hold');
+    Route::post('orders/{order}/items/{orderItem}/transfer', [WaiterOrderController::class, 'transferItem'])->name('orders.items.transfer');
 });
 
 // Shared Notification Routes (could be placed elsewhere too)

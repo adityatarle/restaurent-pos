@@ -17,4 +17,11 @@ class MenuItem extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function ingredients()
+    {
+        return $this->belongsToMany(InventoryItem::class, 'menu_item_ingredients')
+            ->withPivot('quantity')
+            ->withTimestamps();
+    }
 }
