@@ -54,7 +54,7 @@
         const tablesDiv = document.getElementById('tables');
         tablesDiv.innerHTML = tables.map(table => `
             <div class="col-md-4 mb-3">
-                <div class="card shadow-sm border-0 ${table.status === 'occupied' ? 'bg-dark text-light' : 'bg-secondary-subtle text-dark'}">
+                <div class="card shadow-sm border-0 ${table.status === 'occupied' ? 'bg-light' : 'bg-white'}">
                     <div class="card-body">
                         <h5>Table ${table.name}</h5>
                         <p>Status: <span class="badge ${table.status === 'occupied' ? 'bg-warning' : 'bg-success'}">${table.status}</span></p>

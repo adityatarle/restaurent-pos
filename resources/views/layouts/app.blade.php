@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel Restaurant') }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -23,15 +23,16 @@
         #sidebar {
             flex-shrink: 0; width: 260px; overflow-y: auto; transition: width .2s ease-in-out;
             background: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border);
+            color: #e2e8f0;
         }
         #sidebar .nav-link { color: var(--sidebar-link); }
-        #sidebar .nav-link.active, #sidebar .nav-link:hover { color: var(--sidebar-link-active); background-color: rgba(255,255,255,.06); }
+        #sidebar .nav-link.active, #sidebar .nav-link:hover { color: var(--sidebar-link-active); background-color: rgba(255,255,255,.12); }
         #sidebar .text-muted { color: #7e8a98 !important; }
         #sidebar.collapsed { width: 64px; }
         #sidebar .nav-link { display: flex; align-items: center; gap: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: .4rem; }
         #sidebar.collapsed .nav-link { justify-content: center; }
         #sidebar.collapsed .nav-link .label { display: none; }
-        .content-wrapper { flex-grow: 1; overflow-y: auto; background: #0b1321; }
+        .content-wrapper { flex-grow: 1; overflow-y: auto; background: #f7fafc; }
 
         .sticky-in-content { position: sticky; top: 1rem; z-index: 1020; }
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
