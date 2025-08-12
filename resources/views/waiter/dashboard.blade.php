@@ -11,10 +11,10 @@
 
 @push('styles')
 <style>
-    .table-card.status-available .card-header { background: #e8f5e9; }
-    .table-card.status-occupied .card-header { background: #fff3cd; }
-    .table-card.status-reserved .card-header { background: #e3f2fd; }
-    .table-card.my-table { border: 2px solid #2c3e50; }
+    .table-card.status-available .card-header { background: #123524; color: #d1fae5; }
+    .table-card.status-occupied .card-header { background: #3a2a00; color: #fde68a; }
+    .table-card.status-reserved .card-header { background: #0b2545; color: #cfe8ff; }
+    .table-card.my-table { border: 2px solid #00d1b2; }
 </style>
 @endpush
 

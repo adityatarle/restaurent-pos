@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'Laravel Restaurant') }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
@@ -31,7 +31,7 @@
         #sidebar .nav-link { display: flex; align-items: center; gap: .5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: .4rem; }
         #sidebar.collapsed .nav-link { justify-content: center; }
         #sidebar.collapsed .nav-link .label { display: none; }
-        .content-wrapper { flex-grow: 1; overflow-y: auto; background: #f6f9fc; }
+        .content-wrapper { flex-grow: 1; overflow-y: auto; background: #0b1321; }
 
         .sticky-in-content { position: sticky; top: 1rem; z-index: 1020; }
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }

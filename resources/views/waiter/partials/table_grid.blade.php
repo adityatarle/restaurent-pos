@@ -3,7 +3,7 @@
     <div class="card h-100 shadow-sm border-0 table-card status-{{ $table->status }} @if($table->currentOrder && $table->currentOrder->user_id == Auth::id()) my-table @endif">
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong>{{ $table->name }}</strong>
-            <span class="badge bg-{{ $table->status === 'occupied' ? 'warning text-dark' : 'success' }} text-capitalize">{{ $table->status }}</span>
+            <span class="badge text-capitalize {{ $table->status === 'occupied' ? 'bg-warning text-dark' : 'bg-success text-dark' }}">{{ $table->status }}</span>
         </div>
         <div class="card-body">
             @if($table->status == 'occupied' && $table->currentOrder)
