@@ -46,6 +46,9 @@
         }
     </style>
     @stack('styles')
+<style>
+.toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 2000; }
+</style>
 </head>
 <body class="h-100"> {{-- Bootstrap class for 100% height --}}
     <div id="app">
@@ -214,6 +217,7 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="toast-container" id="toastContainer"></div>
     <script>
         // Optional: basic reconnection/backoff for socket.io global
         if (window.io) {
@@ -225,6 +229,26 @@
                     token: '{{ auth()->user()->createToken("socket")->plainTextToken }}',
                     role: '{{ auth()->user()->role }}',
                 });
+            });
+            
+            // Global notification toast
+            socket.on('notification', (payload) => {
+                const container = document.getElementById('toastContainer');
+                const wrapper = document.createElement('div');
+                wrapper.className = 'toast align-items-center text-bg-info border-0 show mb-2';
+                wrapper.setAttribute('role', 'alert');
+                wrapper.setAttribute('aria-live', 'assertive');
+                wrapper.setAttribute('aria-atomic', 'true');
+                wrapper.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${payload.link ? `<a class=\"text-white\" href=\"${payload.link}\">${payload.message}</a>` : payload.message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>`;
+                container.appendChild(wrapper);
+                // Auto hide after 5s
+                setTimeout(() => wrapper.remove(), 5000);
             });
             @endauth
         }

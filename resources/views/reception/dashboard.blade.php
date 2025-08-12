@@ -64,7 +64,7 @@
                             <p>Customers: ${table.current_order.customer_count}</p>
                             <p>Status: ${table.current_order.status}</p>
                             <div class="d-flex gap-2 flex-wrap">
-                                <a class="btn btn-sm btn-outline-primary" href="/reception/orders/${table.current_order.id}/bill">Bill</a>
+                                <a class="btn btn-sm btn-outline-primary" href="/reception/orders/${table.current_order.id}/bill" target="_blank">Bill</a>
                                 <button class="btn btn-sm btn-success" onclick="(async()=>{await fetch('/reception/orders/${table.current_order.id}/pay',{method:'POST',headers:{'X-CSRF-TOKEN':'${csrf}'} });})()">Mark Paid</button>
                                 <button class="btn btn-sm btn-outline-danger" onclick="(async()=>{await fetch('/reception/tables/${table.id}/vacate',{method:'POST',headers:{'X-CSRF-TOKEN':'${csrf}'}});})()">Vacate</button>
                             </div>
