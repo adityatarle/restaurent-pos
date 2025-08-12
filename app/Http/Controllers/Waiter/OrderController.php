@@ -9,6 +9,7 @@ use App\Models\MenuItem;
 use App\Models\Category;
 use App\Models\RestaurantTable;
 use App\Models\KitchenPrint;
+use App\Services\PrinterService;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,6 +19,47 @@ use App\Events\OrderUpdated; // Add this
 
 class OrderController extends Controller
 {
+    public function cancel(Request $request, Order $order)
+    {
+        if (in_array($order->status, ['paid', 'cancelled'])) {
+            return back()->with('info', 'Order already finalised.');
+        }
+
+        // Print cancellation for any already-printed items
+        $printedItems = $order->orderItems()->where('printed_to_kitchen', true)->where('status', '!=', 'cancelled')->with('menuItem')->get();
+        if ($printedItems->isNotEmpty()) {
+            $items = $printedItems->map(function($i) { return ['name' => $i->menuItem->name, 'quantity' => $i->quantity]; })->toArray();
+            app(\App\Services\PrinterService::class)->printKitchenCancellation($order, $items);
+        }
+
+        // Mark all items cancelled
+        $order->orderItems()->update(['status' => 'cancelled']);
+
+        // Cancel order and free table
+        $order->status = 'cancelled';
+        $order->save();
+        if ($order->restaurantTable) {
+            $order->restaurantTable->status = 'available';
+            $order->restaurantTable->save();
+            event(new \App\Events\TableAssigned($order->restaurantTable, null));
+        }
+
+        // Notify Reception on full order cancellation
+        $receptionUsers = \App\Models\User::where('role', 'reception')->orWhere('role', 'superadmin')->get();
+        foreach ($receptionUsers as $receptor) {
+            \App\Models\Notification::create([
+                'user_id' => $receptor->id,
+                'type' => 'order_cancelled',
+                'message' => "Order #{$order->id} cancelled for Table {$order->restaurantTable?->name}",
+                'link' => route('reception.dashboard'),
+            ]);
+        }
+
+        // Broadcast order update
+        event(new \App\Events\OrderUpdated($order));
+
+        return redirect()->route('waiter.dashboard')->with('success', "Order #{$order->id} cancelled.");
+    }
     public function show(Order $order)
     {
         $order->load('orderItems.menuItem', 'restaurantTable');
@@ -26,6 +68,47 @@ class OrderController extends Controller
         }])->orderBy('name')->get();
 
         return view('waiter.orders.show', compact('order', 'categories'));
+    }
+
+    public function create(RestaurantTable $table)
+    {
+        $existing = $table->currentOrder()->first();
+        if ($existing) {
+            return redirect()->route('waiter.orders.show', $existing);
+        }
+        $order = Order::create([
+            'restaurant_table_id' => $table->id,
+            'user_id' => Auth::id(),
+            'customer_count' => request('customer_count', 1),
+            'status' => 'pending',
+        ]);
+        $table->status = 'occupied';
+        $table->save();
+        event(new \App\Events\TableAssigned($table, $order));
+        return redirect()->route('waiter.orders.show', $order)->with('success', 'Order started for table.');
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'restaurant_table_id' => 'required|exists:restaurant_tables,id',
+            'customer_count' => 'required|integer|min:1',
+        ]);
+        $table = RestaurantTable::findOrFail($data['restaurant_table_id']);
+        $existing = $table->currentOrder()->first();
+        if ($existing) {
+            return redirect()->route('waiter.orders.show', $existing);
+        }
+        $order = Order::create([
+            'restaurant_table_id' => $table->id,
+            'user_id' => Auth::id(),
+            'customer_count' => $data['customer_count'],
+            'status' => 'pending',
+        ]);
+        $table->status = 'occupied';
+        $table->save();
+        event(new \App\Events\TableAssigned($table, $order));
+        return redirect()->route('waiter.orders.show', $order)->with('success', 'Order created.');
     }
 
     public function addItem(Request $request, Order $order)
@@ -130,6 +213,12 @@ class OrderController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
+            // Send cancellation to printer stub
+            app(\App\Services\PrinterService::class)->printKitchenCancellation($order, [[
+                'name' => $orderItem->menuItem->name,
+                'quantity' => $orderItem->quantity,
+            ]]);
+
             // Notify Reception
             $receptionUsers = User::where('role', 'reception')->orWhere('role', 'superadmin')->get();
             foreach ($receptionUsers as $receptor) {
@@ -147,8 +236,13 @@ class OrderController extends Controller
         return back()->with('success', 'Item cancelled from order.');
     }
 
+    public function cancelItemAndPrintNotification(Order $order, OrderItem $orderItem)
+    {
+        // Ensure the item gets cancelled and a cancellation ticket is printed (handled in removeItem)
+        return $this->removeItem($order, $orderItem);
+    }
 
-    public function printToKitchen(Request $request, Order $order)
+    public function printToKitchen(Request $request, Order $order, PrinterService $printer) 
     {
         // Logic to determine what needs printing (new items, modified quantities)
         // For this example, let's assume we print items not yet marked `printed_to_kitchen = true`
@@ -200,6 +294,9 @@ class OrderController extends Controller
                 'user_id' => Auth::id(),
             ]);
 
+            // Send to printer stub
+            $printer->printKitchenTicket($order, $printContent);
+
             // Mark items as printed
             foreach ($itemsToPrint as $item) {
                 $item->printed_to_kitchen = true;
@@ -237,8 +334,4 @@ class OrderController extends Controller
             return back()->with('error', 'Failed to send order to kitchen. ' . $e->getMessage());
         }
     }
-
-    // cancelItemAndPrintNotification is effectively the removeItem logic + specific print
-    // The removeItem method already handles the notification and kitchen print log.
-    // The "Cancel Print" itself is a concept for the kitchen.
 }
