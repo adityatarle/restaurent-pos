@@ -74,6 +74,7 @@ Route::middleware(['auth', 'waiter'])->prefix('waiter')->name('waiter.')->group(
     Route::post('orders/{order}/items/{orderItem}/fire', [WaiterOrderController::class, 'fireItem'])->name('orders.items.fire');
     Route::post('orders/{order}/items/{orderItem}/hold', [WaiterOrderController::class, 'holdItem'])->name('orders.items.hold');
     Route::post('orders/{order}/items/{orderItem}/transfer', [WaiterOrderController::class, 'transferItem'])->name('orders.items.transfer');
+    Route::post('orders/{order}/split', [WaiterOrderController::class, 'splitOrder'])->name('orders.split');
 });
 
 // Shared Notification Routes (could be placed elsewhere too)

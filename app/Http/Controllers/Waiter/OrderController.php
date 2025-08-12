@@ -288,6 +288,25 @@ class OrderController extends Controller
         return back()->with('success', 'Item transferred.');
     }
 
+    public function splitOrder(Request $request, Order $order)
+    {
+        $request->validate(['item_ids' => 'required|array', 'item_ids.*' => 'exists:order_items,id']);
+        $child = Order::create([
+            'restaurant_table_id' => $order->restaurant_table_id,
+            'user_id' => Auth::id(),
+            'customer_count' => $order->customer_count,
+            'status' => 'pending',
+            'parent_order_id' => $order->id,
+        ]);
+        // Move selected items
+        OrderItem::whereIn('id', $request->item_ids)->where('order_id', $order->id)->update(['order_id' => $child->id]);
+        $order->calculateTotal();
+        $child->calculateTotal();
+        event(new OrderUpdated($order));
+        event(new OrderUpdated($child));
+        return redirect()->route('waiter.orders.show', $child)->with('success', 'Split bill created.');
+    }
+
     public function printToKitchen(Request $request, Order $order, PrinterService $printer) 
     {
         DB::beginTransaction();
