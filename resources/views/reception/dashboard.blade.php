@@ -30,15 +30,7 @@
 
 @push('scripts')
 <script>
-    const socket = io('http://localhost:3000', { withCredentials: true });
-
-    socket.on('connect', () => {
-        socket.emit('authenticate', {
-            token: '{{ auth()->user()->createToken("socket")->plainTextToken }}',
-            role: '{{ auth()->user()->role }}',
-        });
-    });
-
+    const socket = window.appSocket || io('http://localhost:3000', { withCredentials: true });
     socket.on('authenticated', (data) => {
         if (!data.success) {
             console.error('Authentication failed:', data.error);
@@ -47,12 +39,8 @@
 
     async function loadData() {
         const [tablesResponse, ordersResponse] = await Promise.all([
-            fetch('/api/reception/tables', {
-                headers: { 'Authorization': 'Bearer {{ auth()->user()->createToken("api")->plainTextToken }}' },
-            }),
-            fetch('/api/reception/orders', {
-                headers: { 'Authorization': 'Bearer {{ auth()->user()->createToken("api")->plainTextToken }}' },
-            }),
+            fetch('/reception/tables'),
+            fetch('/reception/orders'),
         ]);
         const tables = await tablesResponse.json();
         const orders = await ordersResponse.json();
@@ -62,6 +50,7 @@
     }
 
     function renderTables(tables) {
+        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const tablesDiv = document.getElementById('tables');
         tablesDiv.innerHTML = tables.map(table => `
             <div class="col-md-4 mb-3">
@@ -74,7 +63,17 @@
                             <p>Waiter: ${table.current_order.waiter_name}</p>
                             <p>Customers: ${table.current_order.customer_count}</p>
                             <p>Status: ${table.current_order.status}</p>
-                        ` : '<p>No active order</p>'}
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a class="btn btn-sm btn-outline-primary" href="/reception/orders/${table.current_order.id}/bill">Bill</a>
+                                <button class="btn btn-sm btn-success" onclick="(async()=>{await fetch('/reception/orders/${table.current_order.id}/pay',{method:'POST',headers:{'X-CSRF-TOKEN':'${csrf}'} });})()">Mark Paid</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="(async()=>{await fetch('/reception/tables/${table.id}/vacate',{method:'POST',headers:{'X-CSRF-TOKEN':'${csrf}'}});})()">Vacate</button>
+                            </div>
+                        ` : `
+                            <p>No active order</p>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary" disabled>Available</button>
+                            </div>
+                        `}
                     </div>
                 </div>
             </div>
@@ -114,19 +113,23 @@
     }
 
     socket.on('table_updated', () => {
-        fetch('/api/reception/tables', {
-            headers: { 'Authorization': 'Bearer {{ auth()->user()->createToken("api")->plainTextToken }}' },
-        })
+        fetch('/reception/tables')
             .then(res => res.json())
             .then(tables => renderTables(tables));
     });
 
     socket.on('order_updated', () => {
-        fetch('/api/reception/orders', {
-            headers: { 'Authorization': 'Bearer {{ auth()->user()->createToken("api")->plainTextToken }}' },
-        })
+        fetch('/reception/orders')
             .then(res => res.json())
             .then(orders => renderOrders(orders));
+    });
+
+    socket.on('notification', (payload) => {
+        const box = document.getElementById('notifications');
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-info';
+        alert.innerHTML = payload.link ? `<a href="${payload.link}">${payload.message}</a>` : payload.message;
+        box.prepend(alert);
     });
 
     loadData();

@@ -53,6 +53,10 @@ class OrderController extends Controller
                 'message' => "Order #{$order->id} cancelled for Table {$order->restaurantTable?->name}",
                 'link' => route('reception.dashboard'),
             ]);
+            event(new \App\Events\NotificationPushed(
+                "Order #{$order->id} cancelled for Table {$order->restaurantTable?->name}",
+                route('reception.dashboard')
+            ));
         }
 
         // Broadcast order update
@@ -226,8 +230,12 @@ class OrderController extends Controller
                     'user_id' => $receptor->id,
                     'type' => 'order_item_cancelled',
                     'message' => "Item '{$orderItem->menuItem->name}' cancelled from Order #{$order->id} for Table {$order->restaurantTable->name}.",
-                    'link' => route('reception.dashboard'), // Or specific order view for reception
+                    'link' => route('reception.dashboard'),
                 ]);
+                event(new \App\Events\NotificationPushed(
+                    "Item '{$orderItem->menuItem->name}' cancelled from Order #{$order->id} for Table {$order->restaurantTable->name}.",
+                    route('reception.dashboard')
+                ));
             }
             // This would be a "Cancel Print" to kitchen
             // For simulation: return redirect()->route('some.print.preview.cancel', ['order' => $order, 'item' => $orderItem]);

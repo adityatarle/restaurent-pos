@@ -29,6 +29,10 @@ class TableController extends Controller
 
         // Broadcast table update
         event(new TableAssigned($table, null));
+        event(new \App\Events\NotificationPushed(
+            "Table {$table->name} vacated" . ($cancelCurrentOrder && $currentOrder ? ", Order #{$currentOrder->id} cancelled" : ''),
+            route('reception.dashboard')
+        ));
 
         return back()->with('success', "Table {$table->name} vacated" . ($cancelCurrentOrder && $currentOrder ? ", Order #{$currentOrder->id} cancelled" : ''));
     }
